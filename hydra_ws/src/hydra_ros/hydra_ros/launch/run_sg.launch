@@ -1,0 +1,36 @@
+<launch>
+    <arg name="sim_time_required" default="true"/>
+    <param name="use_sim_time" value="$(arg sim_time_required)"/>
+
+    <arg name="config_dir" default="$(find hydra)/config/run_sg"/>
+    <arg name="use_gt_frame" default="true" doc="use simulator-provided tf frame"/>
+    <arg name="use_gt_semantics" default="true" doc="use simulator-provider semantics"/>
+    <arg name="use_static_tfs" default="true" doc="publish static tfs from file"/>
+    <arg name="color_mesh_by_label" default="false" doc="display mesh colored by semantic label"/>
+    <arg name="use_oriented_bounding_boxes" default="false"/>
+    <arg name="use_2d_places" default="true"/>
+    <arg name="use_single_channel_label_image" default="false"/>
+
+    <arg name="robot_frame" default="$(eval 'base_link_gt' if arg('use_gt_frame') else 'base_link_kimera')" doc="robot body tf frame"/>
+    <arg name="odom_frame" default="$(eval 'world' if arg('use_gt_frame') else 'odom')" doc="odometry (map) frame"/>
+    <arg name="sensor_frame" default="$(eval 'left_cam' if arg('use_gt_frame') else 'left_cam_kimera')" doc="camera frame"/>
+
+    <arg name="labelspace_name" default="gz" doc="semantic label space"/>
+    <arg name="semantic_map_dir" default="$(find hydra_ros)/config/color" if="$(arg use_gt_semantics)"/>
+    <arg name="semantic_map_dir" default="$(find semantic_inference)/config/colors" unless="$(arg use_gt_semantics)"/>
+    <arg name="semantic_map_path" default="$(arg semantic_map_dir)/gazebo_small_house.csv"/>
+
+    <arg name="rgb_topic" default="/rgb_segmentation"/>
+    <arg name="depth_topic" default="/depth_segmentation"/>
+    <arg name="label_topic" default="/semantic_segmentation"/>
+    <arg name="rgb_info_topic" default="/zed/zed_node/left/camera_info"/>
+
+    <arg name="prerecorded_topic" default="/oneformer/labels/image_raw"/>
+
+    <include file="$(find hydra_ros)/launch/hydra.launch" pass_all_args="true" />
+
+    <!-- Fake odom -->
+    <node pkg="fake_odom" type="fake_odom.py" name="fake_odom" output="screen">
+    </node>
+
+</launch>

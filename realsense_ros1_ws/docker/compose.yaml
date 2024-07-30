@@ -1,0 +1,40 @@
+version: '3'
+services:
+  realsense-ros1-ws:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Specify the target platform to build the image.
+      # Reference: https://docs.docker.com/compose/compose-file/build/#platforms
+      # platforms:
+      #   - "linux/arm64"
+    image: ros2-realsense-ros1-ws
+    container_name: ros2-realsense-ros1-ws
+    stdin_open: true
+    tty: true
+    privileged: true
+    command: /bin/bash
+    network_mode: host
+    working_dir: /home/user/realsense_ros1_ws
+    environment:
+      - DISPLAY=${DISPLAY}
+      - CATKIN_WS=/home/user/realsense_ros1_ws
+    volumes:
+      # Mount local timezone into container. ( Readonly )
+      # Reference: https://stackoverflow.com/questions/57607381/how-do-i-change-timezone-in-a-docker-container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # Mount X11 server
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      # Mount devices
+      - /dev:/dev
+      # Mount Gazebo models directory to reuse models downloaded during first launch.
+      # Reference: https://answers.ros.org/question/365658
+      - ./cache/.gazebo:/home/user/.gazebo
+      # Mounting the following directories will forbid direct deletion.
+      # Consider mount these directories only if the build process is slow.
+      # "source=${localWorkspaceFolder}/../cache/humble/build,target=/home/ws/build,type=bind",
+      # "source=${localWorkspaceFolder}/../cache/humble/install,target=/home/ws/install,type=bind",
+      # "source=${localWorkspaceFolder}/../cache/humble/log,target=/home/ws/log,type=bind"
+      # Mount workspace
+      - ../..:/home/user

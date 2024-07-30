@@ -1,0 +1,60 @@
+version: '3'
+services:
+  ros-core:
+    image: arm64v8/ros:noetic
+    container_name: ros-core
+    command: "rosmaster --core"
+    network_mode: host
+    environment:
+      - ROS_HOSTNAME=192.168.50.207
+      - ROS_MASTER_URI=http://192.168.50.207:11311
+    healthcheck:
+      # The healthcheck is required for ros1-bridge to wait until roscore is ready.
+      test: /ros_entrypoint.sh bash -c "rostopic list || exit 1"
+      interval: 3s
+      timeout: 10s
+      retries: 5
+  ros1-bridge:
+    build:
+      context: .
+      target: release
+    image: ros1-bridge-build-ws
+    container_name: ros1-bridge-build-ws
+    depends_on:
+      ros-core:
+        # The healthcheck is required for ros1-bridge to wait until roscore is ready.
+        condition: service_healthy
+    command: ./start-bridge.sh http://192.168.50.207:11311
+    stdin_open: true
+    environment:
+      - ROS_HOSTNAME=192.168.50.207
+    tty: true
+    network_mode: host
+    working_dir: /
+    volumes:
+      # Mount local timezone into container. ( Readonly )
+      # Reference: https://stackoverflow.com/questions/57607381/how-do-i-change-timezone-in-a-docker-container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # Direct Rendering Infrastructure
+      - /dev/dri:/dev/dri
+      # Shared Memory
+      - /dev/shm:/dev/shm
+  ros1:
+    image: arm64v8/ros:noetic
+    container_name: ros1
+    stdin_open: true
+    tty: true
+    network_mode: host
+    depends_on:
+      ros-core:
+        condition: service_healthy
+  ros2:
+    image: arm64v8/ros:humble
+    container_name: ros2
+    stdin_open: true
+    tty: true
+    network_mode: host
+    volumes:
+      # Shared Memory
+      - /dev/shm:/dev/shm
